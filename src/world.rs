@@ -10,11 +10,10 @@ use bevy::{
 };
 use bevy_rapier3d::prelude::*;
 use meshopt::{
-    generate_vertex_remap,
-    optimize_vertex_cache, optimize_vertex_fetch, remap_index_buffer, remap_vertex_buffer,
+    generate_vertex_remap, optimize_vertex_cache, optimize_vertex_fetch, remap_index_buffer,
+    remap_vertex_buffer,
 };
 use noisy_bevy::simplex_noise_2d;
-
 
 pub struct WorldPlugin;
 
@@ -37,10 +36,20 @@ fn spawn_world(
     let start_time = Instant::now();
 
     // Parameters for terrain
+    #[cfg(not(target_arch = "wasm32"))]
     const SIZE: f32 = 120000.0;
+    #[cfg(not(target_arch = "wasm32"))]
     const RESOLUTION: i32 = 750;
+    #[cfg(not(target_arch = "wasm32"))]
     const HEIGHT_SCALE: f32 = 500.0;
     // const ARRAY_SIZE: usize = (RESOLUTION as usize) * ((HEIGHT_SCALE as usize) / 2);
+
+    #[cfg(target_arch = "wasm32")]
+    const SIZE: f32 = 1200.0;
+    #[cfg(target_arch = "wasm32")]
+    const RESOLUTION: i32 = 250;
+    #[cfg(target_arch = "wasm32")]
+    const HEIGHT_SCALE: f32 = 50.0;
 
     let mut positions = Vec::with_capacity((RESOLUTION + 1).pow(2) as usize);
     let mut indices = Vec::with_capacity((RESOLUTION.pow(2) * 2 * 3) as usize);

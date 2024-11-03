@@ -1,8 +1,10 @@
 use bevy::{
+    diagnostic::{EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin},
     input::mouse::MouseMotion,
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
+use iyes_perf_ui::{entries::PerfUiBundle, PerfUiPlugin};
 
 use crate::world::Shoot;
 
@@ -67,34 +69,27 @@ impl Plugin for FlyCamPlugin {
         app.add_systems(Startup, setup_fly_cam);
         app.add_systems(Update, look_fly_cam);
         app.add_systems(Update, handle_input);
+        app.add_plugins(PerfUiPlugin);
+        app.add_plugins(FrameTimeDiagnosticsPlugin::default());
+        app.add_plugins(EntityCountDiagnosticsPlugin::default());
     }
 }
 
 // spawns the flycam
 fn setup_fly_cam(mut cmd: Commands) {
-    cmd
-        .spawn((
-            Camera3dBundle {
-                transform: Transform::from_xyz(0.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
-                projection: Projection::Perspective(PerspectiveProjection {
-                    fov: 90.0,
-                    // far: 1500.0,
-                    ..Default::default()
-                }),
-                ..default()
-            },
-            FlyCameraMarker,
-        ))
-        // .with_children(|parent| {
-        //     parent.spawn(SpotLightBundle {
-        //         spot_light: SpotLight {
-        //             shadows_enabled: false,
-        //             ..default()
-        //         },
-        //         ..default()
-        //     });
-        // })
-        ;
+    cmd.spawn((
+        Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
+            projection: Projection::Perspective(PerspectiveProjection {
+                fov: 90.0,
+                // far: 1500.0,
+                ..Default::default()
+            }),
+            ..default()
+        },
+        FlyCameraMarker,
+    ));
+    cmd.spawn(PerfUiBundle::default());
 }
 
 // locks/hides the mouse on startup

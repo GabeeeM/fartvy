@@ -5,6 +5,7 @@ mod world;
 
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use camera::FlyCamPlugin;
+use iyes_perf_ui::entries::PerfUiBundle;
 use world::WorldPlugin;
 
 fn main() {
