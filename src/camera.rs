@@ -16,7 +16,7 @@ impl Default for FlyCamSettings {
     fn default() -> Self {
         Self {
             sensitivity: 0.08,
-            move_speed: 50.0,
+            move_speed: 10000.0,
             y_lock: false,
         }
     }
@@ -68,26 +68,29 @@ impl Plugin for FlyCamPlugin {
 
 // spawns the flycam
 fn setup_fly_cam(mut cmd: Commands) {
-    cmd.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
-            projection: Projection::Perspective(PerspectiveProjection {
-                fov: 90.0,
-                ..Default::default()
-            }),
-            ..default()
-        },
-        FlyCameraMarker,
-    ))
-    .with_children(|parent| {
-        parent.spawn(SpotLightBundle {
-            spot_light: SpotLight {
-                shadows_enabled: true,
+    dbg!(cmd
+        .spawn((
+            Camera3dBundle {
+                transform: Transform::from_xyz(0.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
+                projection: Projection::Perspective(PerspectiveProjection {
+                    fov: 90.0,
+                    // far: 1500.0,
+                    ..Default::default()
+                }),
                 ..default()
             },
-            ..default()
-        });
-    });
+            FlyCameraMarker,
+        ))
+        // .with_children(|parent| {
+        //     parent.spawn(SpotLightBundle {
+        //         spot_light: SpotLight {
+        //             shadows_enabled: false,
+        //             ..default()
+        //         },
+        //         ..default()
+        //     });
+        // })
+        .id());
 }
 
 // locks/hides the mouse on startup
@@ -127,7 +130,7 @@ fn look_fly_cam(
 fn move_fly_cam(
     time: Res<Time>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    settings: Res<FlyCamSettings>,
+    mut settings: ResMut<FlyCamSettings>,
     keybinds: Res<FlyCamKeybinds>,
     mut query: Query<&mut Transform, With<FlyCameraMarker>>,
     mut window_query: Query<&mut Window, With<PrimaryWindow>>,
@@ -163,6 +166,11 @@ fn move_fly_cam(
         }
         if keyboard_input.pressed(keybinds.move_down) {
             delta.y -= 1.0;
+        }
+        if keyboard_input.pressed(KeyCode::AltLeft) {
+            settings.move_speed = 200000.0;
+        } else {
+            settings.move_speed = 10000.0;
         }
 
         if !settings.y_lock {
