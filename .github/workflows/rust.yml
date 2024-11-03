@@ -26,7 +26,7 @@ jobs:
 
       - name: Generate WASM bindings
         run: |
-          wasm-bindgen target/wasm32-unknown-unknown/release/fartvy.wasm --out-dir out --no-modules --no-typescript
+          wasm-bindgen target/wasm32-unknown-unknown/release/fartvy.wasm --out-dir out --target web --no-typescript
 
       - name: Copy static files
         run: |
