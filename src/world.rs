@@ -1,7 +1,6 @@
 use std::time::Instant;
 
 use bevy::{
-    ecs::query,
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
@@ -11,14 +10,11 @@ use bevy::{
 };
 use bevy_rapier3d::prelude::*;
 use meshopt::{
-    generate_vertex_remap, optimize_overdraw_in_place, optimize_overdraw_in_place_decoder,
+    generate_vertex_remap,
     optimize_vertex_cache, optimize_vertex_fetch, remap_index_buffer, remap_vertex_buffer,
-    VertexDataAdapter,
 };
 use noisy_bevy::simplex_noise_2d;
-use rand::Rng;
 
-use crate::camera::FlyCameraMarker;
 
 pub struct WorldPlugin;
 
@@ -189,7 +185,7 @@ fn shoot(
             Collider::ball(0.2),
             RigidBody::Dynamic,
             Velocity {
-                linvel: (ev.0.forward() * 50.0).into(),
+                linvel: (ev.0.forward() * 50.0),
                 ..Default::default()
             },
         ));

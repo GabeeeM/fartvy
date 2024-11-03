@@ -1,8 +1,5 @@
 use bevy::{
-    input::{
-        keyboard::Key,
-        mouse::{MouseButtonInput, MouseMotion},
-    },
+    input::mouse::MouseMotion,
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };

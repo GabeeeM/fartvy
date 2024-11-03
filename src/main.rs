@@ -3,10 +3,7 @@ use bevy::prelude::*;
 mod camera;
 mod world;
 
-use bevy_rapier3d::{
-    plugin::{NoUserData, RapierPhysicsPlugin},
-    render::RapierDebugRenderPlugin,
-};
+use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use camera::FlyCamPlugin;
 use world::WorldPlugin;
 
