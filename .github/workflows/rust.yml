@@ -3,6 +3,9 @@ name: Deploy to GitHub Pages
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write  # This allows the workflow to push to gh-pages
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,3 +42,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./out
+          publish_branch: gh-pages
+          allow_empty_commit: false
+          keep_files: false
+          enable_jekyll: false
