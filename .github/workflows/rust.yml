@@ -33,9 +33,8 @@ jobs:
 
       - name: Copy static files
         run: |
-          if [ -d static ]; then
-            cp -r static/* out/
-          fi
+          mkdir -p out
+          cp -r static/* out/ || echo "No static directory to copy from."
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
