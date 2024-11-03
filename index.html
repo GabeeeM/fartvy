@@ -1,16 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bevy Game</title>
-</head>
-<body>
-    <h1>Bevy Game</h1>
-    <div id="game-container"></div>
-    <script type="module">
-        import init from "./fartvy.js"; // Make sure this matches the name of your JavaScript file
-        init().catch(console.error);
-    </script>
+
+<body style="margin: 0px;">
+  <script type="module">
+    import init from './fartvy.js'
+
+    init().catch((error) => {
+      if (!error.message.startsWith("Using exceptions for control flow, don't mind me. This isn't actually an error!")) {
+        throw error;
+      }
+    });
+  </script>
 </body>
+
 </html>
