@@ -1752,6 +1752,7 @@ dependencies = [
  "bevy",
  "bevy_rapier3d",
  "log",
+ "meshopt",
  "noisy_bevy",
  "rand",
 ]
@@ -1791,6 +1792,15 @@ checksum = "a1b589b4dc103969ad3cf85c950899926ec64300a1a46d76c03a6072957036f0"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+]
+
+[[package]]
+name = "float-cmp"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b09cf3155332e944990140d967ff5eceb70df778b34f77d8075db46e4704e6d8"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -2414,6 +2424,18 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
+
+[[package]]
+name = "meshopt"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a278a2ffc00b14e113fa542f08de253c8c989b9eb3588c87c93bbfa0931bbb18"
+dependencies = [
+ "bitflags 2.6.0",
+ "cc",
+ "float-cmp",
+ "thiserror",
+]
 
 [[package]]
 name = "metal"

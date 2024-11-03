@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use bevy::{
     ecs::query,
     pbr::CascadeShadowConfigBuilder,
@@ -8,6 +10,11 @@ use bevy::{
     },
 };
 use bevy_rapier3d::prelude::*;
+use meshopt::{
+    generate_vertex_remap, optimize_overdraw_in_place, optimize_overdraw_in_place_decoder,
+    optimize_vertex_cache, optimize_vertex_fetch, remap_index_buffer, remap_vertex_buffer,
+    VertexDataAdapter,
+};
 use noisy_bevy::simplex_noise_2d;
 use rand::Rng;
 
@@ -31,10 +38,12 @@ fn spawn_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let start_time = Instant::now();
+
     // Parameters for terrain
-    const SIZE: f32 = 12000.0;
-    const RESOLUTION: i32 = 350;
-    const HEIGHT_SCALE: f32 = 20.0;
+    const SIZE: f32 = 120000.0;
+    const RESOLUTION: i32 = 750;
+    const HEIGHT_SCALE: f32 = 500.0;
     // const ARRAY_SIZE: usize = (RESOLUTION as usize) * ((HEIGHT_SCALE as usize) / 2);
 
     let mut positions = Vec::with_capacity((RESOLUTION + 1).pow(2) as usize);
@@ -56,8 +65,6 @@ fn spawn_world(
         }
     }
 
-    dbg!(indices.capacity());
-    dbg!(positions.capacity());
     // Generate indices
     for z in 0..RESOLUTION {
         for x in 0..RESOLUTION {
@@ -71,8 +78,18 @@ fn spawn_world(
             ]);
         }
     }
-    dbg!(indices.len());
-    dbg!(positions.len());
+
+    let vertex_count = positions.len();
+    let (_, remap) = generate_vertex_remap(&positions, Some(&indices));
+    let mut remapped_indices = remap_index_buffer(Some(&indices), vertex_count, &remap);
+    let remapped_positions = remap_vertex_buffer(&positions, vertex_count, &remap);
+    let vertex_count = remapped_positions.len();
+    optimize_vertex_cache(&remapped_indices, vertex_count);
+    // optimize_overdraw_in_place(&mut remapped_indices, &remapped_positions, 1.01);
+    optimize_vertex_fetch(&mut remapped_indices, &remapped_positions);
+
+    let indices = remapped_indices;
+    let positions = remapped_positions;
 
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -97,6 +114,7 @@ fn spawn_world(
     // Compute normals
     mesh.duplicate_vertices();
     mesh.compute_normals();
+    mesh.generate_tangents().expect("TANGENTS FAILED OH GOD");
 
     // Material with better terrain settings
     let material = StandardMaterial {
@@ -147,6 +165,11 @@ fn spawn_world(
     commands.spawn(sunlight);
 
     // dbg!(commands.spawn(cube).id());
+    let duration = start_time.elapsed();
+    println!(
+        "Time taken for mesh generation and optimization: {:?}",
+        duration
+    );
 }
 
 fn shoot(
