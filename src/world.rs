@@ -32,36 +32,38 @@ fn spawn_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // Parameters for terrain
-    let size = 6000.0;
-    let resolution = 25;
-    let noise_scale = 0.1;
-    let height_scale = 300.0;
+    const SIZE: f32 = 12000.0;
+    const RESOLUTION: i32 = 350;
+    const HEIGHT_SCALE: f32 = 20.0;
+    // const ARRAY_SIZE: usize = (RESOLUTION as usize) * ((HEIGHT_SCALE as usize) / 2);
 
-    // Create a plane mesh manually with the grid pattern
-    let mut positions = Vec::new();
-    let mut indices = Vec::new();
+    let mut positions = Vec::with_capacity((RESOLUTION + 1).pow(2) as usize);
+    let mut indices = Vec::with_capacity((RESOLUTION.pow(2) * 2 * 3) as usize);
+    // let mut indices = [0u32; ARRAY_SIZE];
+
     let mut uvs = Vec::new();
 
     // Generate vertices
-    for z in 0..=resolution {
-        for x in 0..=resolution {
-            let px = size * (x as f32 / resolution as f32 - 0.5);
-            let pz = size * (z as f32 / resolution as f32 - 0.5);
+    for z in 0..=RESOLUTION {
+        for x in 0..=RESOLUTION {
+            let px = SIZE * (x as f32 / RESOLUTION as f32 - 0.5);
+            let pz = SIZE * (z as f32 / RESOLUTION as f32 - 0.5);
 
-            let height =
-                simplex_noise_2d(Vec2::new(px * noise_scale, pz * noise_scale)) * height_scale;
+            let height = simplex_noise_2d(Vec2::new(px, pz)) * HEIGHT_SCALE;
 
             positions.push([px, height, pz]);
-            uvs.push([x as f32 / resolution as f32, z as f32 / resolution as f32]);
+            uvs.push([x as f32 / RESOLUTION as f32, z as f32 / RESOLUTION as f32]);
         }
     }
 
+    dbg!(indices.capacity());
+    dbg!(positions.capacity());
     // Generate indices
-    for z in 0..resolution {
-        for x in 0..resolution {
-            let tl = z * (resolution + 1) + x;
+    for z in 0..RESOLUTION {
+        for x in 0..RESOLUTION {
+            let tl = z * (RESOLUTION + 1) + x;
             let tr = tl + 1;
-            let bl = (z + 1) * (resolution + 1) + x;
+            let bl = (z + 1) * (RESOLUTION + 1) + x;
             let br = bl + 1;
 
             indices.extend_from_slice(&[
@@ -69,6 +71,8 @@ fn spawn_world(
             ]);
         }
     }
+    dbg!(indices.len());
+    dbg!(positions.len());
 
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -92,7 +96,7 @@ fn spawn_world(
 
     // Compute normals
     mesh.duplicate_vertices();
-    mesh.compute_flat_normals();
+    mesh.compute_normals();
 
     // Material with better terrain settings
     let material = StandardMaterial {
@@ -116,7 +120,7 @@ fn spawn_world(
 
     let sunlight = DirectionalLightBundle {
         transform: Transform {
-            translation: Vec3::new(0.0, 1000.0, 0.0), // High in the sky
+            translation: Vec3::new(500.0, 20.0, 500.0), // High in the sky
             rotation: Quat::from_euler(EulerRot::XYZ, -std::f32::consts::FRAC_PI_4, 0.0, 0.0), // Angle the light
             ..Default::default()
         },
@@ -131,7 +135,7 @@ fn spawn_world(
         cascade_shadow_config: CascadeShadowConfigBuilder {
             first_cascade_far_bound: 40.0,
             minimum_distance: 10.0,
-            maximum_distance: 10000.0, // Set your desired shadow distance here
+            maximum_distance: 50000.0, // Set your desired shadow distance here
             num_cascades: 4,           // More cascades for better shadow detail
             overlap_proportion: 0.8,
             ..default()
@@ -139,20 +143,6 @@ fn spawn_world(
         .into(),
         ..Default::default()
     };
-
-    // let cube = PbrBundle {
-    //     mesh: meshes.add(Cuboid {
-    //         half_size: Vec3 {
-    //             x: 15.0,
-    //             y: 15.0,
-    //             z: 15.0,
-    //         },
-    //     }),
-    //     material: materials.add(Color::srgb(0.0, 0.0, 1.0)),
-    //     transform: Transform::from_xyz(25.0, 15.0, 25.0),
-    //     ..Default::default()
-    // };
-
     commands.spawn(ground);
     commands.spawn(sunlight);
 
@@ -168,12 +158,12 @@ fn shoot(
     for ev in ev_shoot.read() {
         commands.spawn((
             PbrBundle {
-                mesh: meshes.add(Sphere { radius: 2.0 }),
+                mesh: meshes.add(Sphere { radius: 0.2 }),
                 material: materials.add(Color::WHITE),
                 transform: ev.0,
                 ..Default::default()
             },
-            Collider::ball(2.0),
+            Collider::ball(0.2),
             RigidBody::Dynamic,
             Velocity {
                 linvel: (ev.0.forward() * 50.0).into(),

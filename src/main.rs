@@ -17,9 +17,9 @@ fn main() {
             FlyCamPlugin,
             WorldPlugin,
             RapierPhysicsPlugin::<NoUserData>::default(),
-            RapierDebugRenderPlugin {
-                ..Default::default()
-            },
+            // RapierDebugRenderPlugin {
+            //     ..Default::default()
+            // },
         ))
         .insert_resource(ClearColor(Color::srgb(0.53, 0.81, 0.92))) // Sky blue color
         .run();
