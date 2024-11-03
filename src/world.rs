@@ -17,9 +17,14 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (spawn_world));
+        app.add_systems(Startup, spawn_world)
+            .add_event::<Shoot>()
+            .add_systems(Update, shoot);
     }
 }
+
+#[derive(Event)]
+pub struct Shoot(pub Transform);
 
 fn spawn_world(
     mut commands: Commands,
@@ -27,10 +32,10 @@ fn spawn_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // Parameters for terrain
-    let size = 6000000.0;
+    let size = 6000.0;
     let resolution = 25;
     let noise_scale = 0.1;
-    let height_scale = 300000.0;
+    let height_scale = 300.0;
 
     // Create a plane mesh manually with the grid pattern
     let mut positions = Vec::new();
@@ -148,8 +153,32 @@ fn spawn_world(
     //     ..Default::default()
     // };
 
-    dbg!(commands.spawn(ground).id());
-    dbg!(commands.spawn(sunlight).id());
+    commands.spawn(ground);
+    commands.spawn(sunlight);
 
     // dbg!(commands.spawn(cube).id());
+}
+
+fn shoot(
+    mut ev_shoot: EventReader<Shoot>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for ev in ev_shoot.read() {
+        commands.spawn((
+            PbrBundle {
+                mesh: meshes.add(Sphere { radius: 2.0 }),
+                material: materials.add(Color::WHITE),
+                transform: ev.0,
+                ..Default::default()
+            },
+            Collider::ball(2.0),
+            RigidBody::Dynamic,
+            Velocity {
+                linvel: (ev.0.forward() * 50.0).into(),
+                ..Default::default()
+            },
+        ));
+    }
 }

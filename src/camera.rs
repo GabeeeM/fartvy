@@ -1,8 +1,13 @@
 use bevy::{
-    input::{keyboard::Key, mouse::MouseMotion},
+    input::{
+        keyboard::Key,
+        mouse::{MouseButtonInput, MouseMotion},
+    },
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
+
+use crate::world::Shoot;
 
 /// Settings for mouse sensitivity and movement speed
 #[derive(Resource)]
@@ -16,7 +21,7 @@ impl Default for FlyCamSettings {
     fn default() -> Self {
         Self {
             sensitivity: 0.08,
-            move_speed: 10000.0,
+            move_speed: 1000.0,
             y_lock: false,
         }
     }
@@ -32,6 +37,7 @@ pub struct FlyCamKeybinds {
     pub move_up: KeyCode,
     pub move_down: KeyCode,
     pub toggle_cursor: KeyCode,
+    pub shoot: MouseButton,
 }
 
 impl Default for FlyCamKeybinds {
@@ -44,6 +50,7 @@ impl Default for FlyCamKeybinds {
             move_up: KeyCode::Space,
             move_down: KeyCode::ShiftLeft,
             toggle_cursor: KeyCode::Escape,
+            shoot: MouseButton::Left,
         }
     }
 }
@@ -62,13 +69,13 @@ impl Plugin for FlyCamPlugin {
         app.add_systems(Startup, lock_mouse);
         app.add_systems(Startup, setup_fly_cam);
         app.add_systems(Update, look_fly_cam);
-        app.add_systems(Update, move_fly_cam);
+        app.add_systems(Update, handle_input);
     }
 }
 
 // spawns the flycam
 fn setup_fly_cam(mut cmd: Commands) {
-    dbg!(cmd
+    cmd
         .spawn((
             Camera3dBundle {
                 transform: Transform::from_xyz(0.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -90,7 +97,7 @@ fn setup_fly_cam(mut cmd: Commands) {
         //         ..default()
         //     });
         // })
-        .id());
+        ;
 }
 
 // locks/hides the mouse on startup
@@ -127,9 +134,11 @@ fn look_fly_cam(
 }
 
 // move the flycam with the set keybinds
-fn move_fly_cam(
+fn handle_input(
     time: Res<Time>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+    mut shoot_writer: EventWriter<Shoot>,
     mut settings: ResMut<FlyCamSettings>,
     keybinds: Res<FlyCamKeybinds>,
     mut query: Query<&mut Transform, With<FlyCameraMarker>>,
@@ -162,15 +171,19 @@ fn move_fly_cam(
         }
 
         if keyboard_input.pressed(keybinds.move_up) {
-            delta.y += 1.0;
+            settings.move_speed *= 1.01;
         }
         if keyboard_input.pressed(keybinds.move_down) {
-            delta.y -= 1.0;
+            settings.move_speed /= 1.01;
         }
-        if keyboard_input.pressed(KeyCode::AltLeft) {
-            settings.move_speed = 200000.0;
-        } else {
-            settings.move_speed = 10000.0;
+        // if keyboard_input.pressed(KeyCode::AltLeft) {
+        //     settings.move_speed = 200000.0;
+        // } else {
+        //     settings.move_speed = 10.0;
+        // }
+
+        if mouse_input.just_pressed(keybinds.shoot) {
+            shoot_writer.send(Shoot(*transform));
         }
 
         if !settings.y_lock {
