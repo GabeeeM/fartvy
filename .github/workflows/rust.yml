@@ -6,6 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -25,11 +26,13 @@ jobs:
 
       - name: Generate WASM bindings
         run: |
-          wasm-bindgen target/wasm32-unknown-unknown/release/your_project_name.wasm --out-dir out --no-modules --no-typescript
+          wasm-bindgen target/wasm32-unknown-unknown/release/fartvy.wasm --out-dir out --no-modules --no-typescript
 
       - name: Copy static files
-        run: cp -r static/* out/
-        if: exists('static')
+        run: |
+          if [ -d static ]; then
+            cp -r static/* out/
+          fi
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
