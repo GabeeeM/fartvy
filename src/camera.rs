@@ -16,7 +16,7 @@ impl Default for FlyCamSettings {
     fn default() -> Self {
         Self {
             sensitivity: 0.08,
-            move_speed: 10.0,
+            move_speed: 50.0,
             y_lock: false,
         }
     }
