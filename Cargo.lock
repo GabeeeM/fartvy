@@ -1755,6 +1755,7 @@ dependencies = [
  "meshopt",
  "noisy_bevy",
  "rand",
+ "wasm-bindgen",
 ]
 
 [[package]]
