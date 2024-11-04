@@ -1,3 +1,4 @@
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
 
 use bevy::{
@@ -9,10 +10,13 @@ use bevy::{
     },
 };
 use bevy_rapier3d::prelude::*;
+
+#[cfg(not(target_arch = "wasm32"))]
 use meshopt::{
     generate_vertex_remap, optimize_vertex_cache, optimize_vertex_fetch, remap_index_buffer,
     remap_vertex_buffer,
 };
+
 use noisy_bevy::simplex_noise_2d;
 
 pub struct WorldPlugin;
@@ -33,31 +37,30 @@ fn spawn_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    #[cfg(not(target_arch = "wasm32"))]
     let start_time = Instant::now();
 
     // Parameters for terrain
     #[cfg(not(target_arch = "wasm32"))]
-    const SIZE: f32 = 120000.0;
+    const SIZE: f32 = 1200000.0;
     #[cfg(not(target_arch = "wasm32"))]
     const RESOLUTION: i32 = 750;
     #[cfg(not(target_arch = "wasm32"))]
-    const HEIGHT_SCALE: f32 = 500.0;
+    const HEIGHT_SCALE: f32 = 2300.0;
     // const ARRAY_SIZE: usize = (RESOLUTION as usize) * ((HEIGHT_SCALE as usize) / 2);
 
     #[cfg(target_arch = "wasm32")]
-    const SIZE: f32 = 1200.0;
+    const SIZE: f32 = 12000.0;
     #[cfg(target_arch = "wasm32")]
-    const RESOLUTION: i32 = 250;
+    const RESOLUTION: i32 = 300;
     #[cfg(target_arch = "wasm32")]
-    const HEIGHT_SCALE: f32 = 50.0;
+    const HEIGHT_SCALE: f32 = 100.0;
 
-    let mut positions = Vec::with_capacity((RESOLUTION + 1).pow(2) as usize);
-    let mut indices = Vec::with_capacity((RESOLUTION.pow(2) * 2 * 3) as usize);
+    let mut positions: Vec<[f32; 3]> = Vec::with_capacity((RESOLUTION + 1).pow(2) as usize);
+    // let mut indices = Vec::with_capacity((RESOLUTION.pow(2) * 2 * 3) as usize);
     // let mut indices = [0u32; ARRAY_SIZE];
-
     let mut uvs = Vec::new();
 
-    // Generate vertices
     for z in 0..=RESOLUTION {
         for x in 0..=RESOLUTION {
             let px = SIZE * (x as f32 / RESOLUTION as f32 - 0.5);
@@ -70,31 +73,7 @@ fn spawn_world(
         }
     }
 
-    // Generate indices
-    for z in 0..RESOLUTION {
-        for x in 0..RESOLUTION {
-            let tl = z * (RESOLUTION + 1) + x;
-            let tr = tl + 1;
-            let bl = (z + 1) * (RESOLUTION + 1) + x;
-            let br = bl + 1;
-
-            indices.extend_from_slice(&[
-                tl as u32, bl as u32, tr as u32, tr as u32, bl as u32, br as u32,
-            ]);
-        }
-    }
-
-    let vertex_count = positions.len();
-    let (_, remap) = generate_vertex_remap(&positions, Some(&indices));
-    let mut remapped_indices = remap_index_buffer(Some(&indices), vertex_count, &remap);
-    let remapped_positions = remap_vertex_buffer(&positions, vertex_count, &remap);
-    let vertex_count = remapped_positions.len();
-    optimize_vertex_cache(&remapped_indices, vertex_count);
-    // optimize_overdraw_in_place(&mut remapped_indices, &remapped_positions, 1.01);
-    optimize_vertex_fetch(&mut remapped_indices, &remapped_positions);
-
-    let indices = remapped_indices;
-    let positions = remapped_positions;
+    let (positions, indices) = handle_mesh(positions);
 
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -117,7 +96,7 @@ fn spawn_world(
     mesh.insert_indices(Indices::U32(indices));
 
     // Compute normals
-    mesh.duplicate_vertices();
+    // mesh.duplicate_vertices();
     mesh.compute_normals();
     mesh.generate_tangents().expect("TANGENTS FAILED OH GOD");
 
@@ -170,7 +149,9 @@ fn spawn_world(
     commands.spawn(sunlight);
 
     // dbg!(commands.spawn(cube).id());
+    #[cfg(not(target_arch = "wasm32"))]
     let duration = start_time.elapsed();
+    #[cfg(not(target_arch = "wasm32"))]
     println!(
         "Time taken for mesh generation and optimization: {:?}",
         duration
@@ -186,12 +167,12 @@ fn shoot(
     for ev in ev_shoot.read() {
         commands.spawn((
             PbrBundle {
-                mesh: meshes.add(Sphere { radius: 0.2 }),
+                mesh: meshes.add(Sphere { radius: 2.0 }),
                 material: materials.add(Color::WHITE),
                 transform: ev.0,
                 ..Default::default()
             },
-            Collider::ball(0.2),
+            Collider::ball(2.0),
             RigidBody::Dynamic,
             Velocity {
                 linvel: (ev.0.forward() * 50.0),
@@ -199,4 +180,50 @@ fn shoot(
             },
         ));
     }
+}
+
+fn handle_mesh(positions: Vec<[f32; 3]>) -> (Vec<[f32; 3]>, Vec<u32>) {
+    let vertex_count = positions.len();
+
+    // Generate triangle indices for a grid-like structure
+    let mut initial_indices = Vec::new();
+    let width = (vertex_count as f32).sqrt() as u32;
+
+    // Generate grid indices
+    for row in 0..width - 1 {
+        for col in 0..width - 1 {
+            let top_left = row * width + col;
+            let top_right = top_left + 1;
+            let bottom_left = (row + 1) * width + col;
+            let bottom_right = bottom_left + 1;
+
+            // First triangle
+            initial_indices.push(top_left);
+            initial_indices.push(bottom_left);
+            initial_indices.push(top_right);
+
+            // Second triangle
+            initial_indices.push(top_right);
+            initial_indices.push(bottom_left);
+            initial_indices.push(bottom_right);
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // Generate vertex remap and optimize only when not targeting wasm
+        let (unique_vertex_count, remap) = generate_vertex_remap(&positions, None);
+
+        // Remap buffers
+        let mut remapped_indices = remap_index_buffer(Some(&initial_indices), vertex_count, &remap);
+        let remapped_positions = remap_vertex_buffer(&positions, vertex_count, &remap);
+
+        // Apply optimizations
+        optimize_vertex_cache(&mut remapped_indices, unique_vertex_count);
+        optimize_vertex_fetch(&mut remapped_indices, &remapped_positions);
+
+        return (remapped_positions, remapped_indices);
+    }
+
+    (positions, initial_indices)
 }

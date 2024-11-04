@@ -1,11 +1,13 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowResolution};
 
 mod camera;
 mod world;
 
-use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
+use bevy_rapier3d::{
+    plugin::{NoUserData, RapierPhysicsPlugin},
+    render::RapierDebugRenderPlugin,
+};
 use camera::FlyCamPlugin;
-use iyes_perf_ui::entries::PerfUiBundle;
 use world::WorldPlugin;
 
 fn main() {

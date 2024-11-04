@@ -4,7 +4,6 @@ use bevy::{
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
-use iyes_perf_ui::{entries::PerfUiBundle, PerfUiPlugin};
 
 use crate::world::Shoot;
 
@@ -69,9 +68,6 @@ impl Plugin for FlyCamPlugin {
         app.add_systems(Startup, setup_fly_cam);
         app.add_systems(Update, look_fly_cam);
         app.add_systems(Update, handle_input);
-        app.add_plugins(PerfUiPlugin);
-        app.add_plugins(FrameTimeDiagnosticsPlugin::default());
-        app.add_plugins(EntityCountDiagnosticsPlugin::default());
     }
 }
 
@@ -89,7 +85,6 @@ fn setup_fly_cam(mut cmd: Commands) {
         },
         FlyCameraMarker,
     ));
-    cmd.spawn(PerfUiBundle::default());
 }
 
 // locks/hides the mouse on startup
